@@ -62,6 +62,19 @@ def scrape_comments(video_id):
         "youtube", "v3", developerKey=API_KEY
     )
 
+    conn = psycopg2.connect(
+        host = 'localhost',
+        database = 'youtube_comments',
+        user = 'postgres',
+        password = DB_PASS,
+    )
+
+    cursor = conn.cursor()
+    cursor.execute("SELECT comment_id FROM comments_raw")
+
+    unique_ids = cursor.fetchall()
+    unique_ids = np.array(unique_ids).squeeze()
+
     channel_id = get_channel_id_from_video(youtube, video_id)
 
     playlist_id = get_playlist_id_from_channel(youtube, channel_id)
@@ -97,9 +110,17 @@ def scrape_comments(video_id):
             response = request.execute()
 
             for item in response['items']:
-                all_comments_info.append({'videoid': video_id,
-                                        'commentid': item['snippet']['topLevelComment']['id'],
-                                        'content': item['snippet']['topLevelComment']['snippet']['textDisplay']})
+                comment_id = item['snippet']['topLevelComment']['id']
+
+                if comment_id in unique_ids:
+                    continue
+                else:
+                    all_comments_info.append({'videoid': video_id,
+                                            'commentid': comment_id,
+                                            'content': item['snippet']['topLevelComment']['snippet']['textDisplay']})
+
+    cursor.close()
+    conn.close()
                 
     return all_comments_info
 
@@ -118,8 +139,15 @@ def load_raw_text(video_id):
 
     try:
         for item in all_comments_info:
-            cursor.execute("INSERT INTO comments_raw (video_id, comment_id, content) VALUES (%s, %s, %s)",
-                        (item['videoid'], item['commentid'], item['content']))
+            comment_id = item['snippet']['topLevelComment']['id']
+
+            if comment_id in unique_ids:
+                 continue
+            else:
+                all_comments_info.append({'videoid': video_id,
+                                        'commentid': comment_id,
+                                        'content': item['snippet']['topLevelComment']['snippet']['textDisplay']})
+
             
         conn.commit()
             
