@@ -1,6 +1,7 @@
 import googleapiclient.discovery
 import argparse
 import psycopg2
+import numpy as np
 from psycopg2.extras import RealDictCursor
 from config import API_KEY, DB_PASS
 
@@ -92,10 +93,15 @@ def scrape_comments(video_id):
         response = request.execute()
 
         for item in response['items']:
-                all_comments_info.append({'videoid': video_id,
-                                        'commentid': item['snippet']['topLevelComment']['id'],
-                                        'content': item['snippet']['topLevelComment']['snippet']['textDisplay']})
+                comment_id = item['snippet']['topLevelComment']['id']
 
+                if comment_id in unique_ids:
+                    continue
+                else:
+                    all_comments_info.append({'videoid': video_id,
+                                            'commentid': comment_id,
+                                            'content': item['snippet']['topLevelComment']['snippet']['textDisplay']})
+                    
         while 'nextPageToken' in response.keys():
 
             newToken = response['nextPageToken']
@@ -121,7 +127,7 @@ def scrape_comments(video_id):
 
     cursor.close()
     conn.close()
-                
+
     return all_comments_info
 
 def load_raw_text(video_id):
@@ -139,15 +145,8 @@ def load_raw_text(video_id):
 
     try:
         for item in all_comments_info:
-            comment_id = item['snippet']['topLevelComment']['id']
-
-            if comment_id in unique_ids:
-                 continue
-            else:
-                all_comments_info.append({'videoid': video_id,
-                                        'commentid': comment_id,
-                                        'content': item['snippet']['topLevelComment']['snippet']['textDisplay']})
-
+            cursor.execute("INSERT INTO comments_raw (video_id, comment_id, content) VALUES (%s, %s, %s)",
+                    (item['videoid'], item['commentid'], item['content']))
             
         conn.commit()
             
