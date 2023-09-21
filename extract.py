@@ -2,13 +2,12 @@ import googleapiclient.discovery
 import argparse
 import psycopg2
 import numpy as np
-from psycopg2.extras import RealDictCursor
 from config import API_KEY, DB_PASS
 
 def get_channel_id_from_video(youtube, video_id):
     request = youtube.videos().list(
-    part = 'snippet',
-    id = video_id
+        part = 'snippet',
+        id = video_id
     )
 
     response = request.execute()
@@ -64,7 +63,8 @@ def scrape_comments(video_id):
     )
 
     conn = psycopg2.connect(
-        host = 'localhost',
+        host = '192.168.1.104',
+        port = 5432,
         database = 'youtube_comments',
         user = 'postgres',
         password = DB_PASS,
@@ -134,8 +134,13 @@ def load_raw_text(video_id):
 
     all_comments_info = scrape_comments(video_id)
 
+    if not all_comments_info:
+        print("No new comments found")
+        return True
+    
     conn = psycopg2.connect(
-        host = 'localhost',
+        host = '192.168.1.104',
+        port = 5432,
         database = 'youtube_comments',
         user = 'postgres',
         password = DB_PASS,
@@ -162,11 +167,12 @@ def load_raw_text(video_id):
 
 def main():
     parser = argparse.ArgumentParser()
+
     parser.add_argument('-i', type = str, help = 'Video ID from target channel')
+
     args = parser.parse_args()
 
-    video_id = args.video_id
-
+    video_id = args.i
 
     if load_raw_text(video_id):
         print('Comment loading complete')
