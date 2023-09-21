@@ -51,7 +51,7 @@ def main():
 
     data = cursor.fetchall()
 
-    data = pd.DataFrame(data, columns = ['video_id', 'comment_id', 'content'])
+    data = pd.DataFrame(data, columns = ['video_id', 'comment_id', 'content', 'published'])
 
     data['content'] = [html.unescape(comment) for comment in data['content']]
 
@@ -60,8 +60,8 @@ def main():
     data = data[data['content'] != '']
 
     for row in data.values:
-        cursor.execute("INSERT INTO comments_cleaned (video_id, comment_id, content) VALUES (%s, %s, %s)",
-                    (row[0], row[1], row[2]))
+        cursor.execute("INSERT INTO comments_cleaned (video_id, comment_id, content, published) VALUES (%s, %s, %s, %s)",
+                    (row[0], row[1], row[2], row[3]))
         
         conn.commit()
 
