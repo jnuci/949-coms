@@ -39,7 +39,7 @@ def preprocess(text):
 
 def main():
     conn = psycopg2.connect(
-        host = '192.168.1.104',
+        host = 'localhost',
         port = 5432,
         database = 'youtube_comments',
         user = 'postgres',
@@ -51,7 +51,7 @@ def main():
 
     data = cursor.fetchall()
 
-    data = pd.DataFrame(data, columns = ['video_id', 'comment_id', 'content', 'published'])
+    data = pd.DataFrame(data, columns = ['video_id', 'comment_id', 'content', 'published', 'username', 'profile_image'])
 
     data['content'] = [html.unescape(comment) for comment in data['content']]
 
@@ -60,10 +60,14 @@ def main():
     data = data[data['content'] != '']
 
     for row in data.values:
-        cursor.execute("INSERT INTO comments_cleaned (video_id, comment_id, content, published) VALUES (%s, %s, %s, %s)",
-                    (row[0], row[1], row[2], row[3]))
+        cursor.execute("INSERT INTO comments_cleaned (video_id, comment_id, content, published, username, profile_image) VALUES (%s, %s, %s, %s, %s, %s)",
+                    (row[0], row[1], row[2], row[3], row[4], row[5]))
         
         conn.commit()
+
+    cursor.execute("SELECT count(comment_id) FROM comments_cleaned")
+    count = cursor.fetchall()
+    print(f"{count[0][0]} total comments ready for analytics!")
 
     cursor.close()
     conn.close()

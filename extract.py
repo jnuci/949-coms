@@ -63,7 +63,7 @@ def scrape_comments(video_id):
     )
 
     conn = psycopg2.connect(
-        host = '192.168.1.104',
+        host = 'localhost',
         port = 5432,
         database = 'youtube_comments',
         user = 'postgres',
@@ -99,13 +99,19 @@ def scrape_comments(video_id):
 
                 published = item['snippet']['topLevelComment']['snippet']['publishedAt']
 
+                username = item['snippet']['topLevelComment']['snippet']['authorDisplayName']
+
+                pfp_url = item['snippet']['topLevelComment']['snippet']['authorProfileImageUrl']
+
                 if comment_id in unique_ids:
                     continue
                 else:
                     all_comments_info.append({'videoid': video_id,
                                             'commentid': comment_id,
                                             'content': content,
-                                            'published': published})
+                                            'published': published,
+                                            'username': username,
+                                            'profile_image': pfp_url})
                     
         while 'nextPageToken' in response.keys():
 
@@ -127,14 +133,19 @@ def scrape_comments(video_id):
 
                 published = item['snippet']['topLevelComment']['snippet']['publishedAt']
 
+                username = item['snippet']['topLevelComment']['snippet']['authorDisplayName']
+
+                pfp_url = item['snippet']['topLevelComment']['snippet']['authorProfileImageUrl']
+
                 if comment_id in unique_ids:
                     continue
                 else:
                     all_comments_info.append({'videoid': video_id,
                                             'commentid': comment_id,
                                             'content': content,
-                                            'published': published})
-
+                                            'published': published,
+                                            'username': username,
+                                            'profile_image': pfp_url})
     cursor.close()
     conn.close()
 
@@ -149,7 +160,7 @@ def load_raw_text(video_id):
         return True
     
     conn = psycopg2.connect(
-        host = '192.168.1.104',
+        host = 'localhost',
         port = 5432,
         database = 'youtube_comments',
         user = 'postgres',
@@ -160,8 +171,8 @@ def load_raw_text(video_id):
 
     try:
         for item in all_comments_info:
-            cursor.execute("INSERT INTO comments_raw (video_id, comment_id, content, published) VALUES (%s, %s, %s, %s)",
-                    (item['videoid'], item['commentid'], item['content'], item['published']))
+            cursor.execute("INSERT INTO comments_raw (video_id, comment_id, content, published, username, profile_image) VALUES (%s, %s, %s, %s, %s, %s)",
+                    (item['videoid'], item['commentid'], item['content'], item['published'], item['username'], item['profile_image']))
             
         conn.commit()
             
