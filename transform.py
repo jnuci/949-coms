@@ -17,10 +17,13 @@ def preprocess(text):
     text = text.replace('’', '\'')
 
     # deal with some punctuation
+    text = re.sub(r'[@#$%^*()]', '', text)
     text = text.replace('-', ' ')
     text = text.replace('.', ' . ')
     text = text.replace('?', ' ? ')
     text = text.replace('!', ' ! ')
+    text = text.replace(',', ' , ')
+    text = text.replace('"', ' " ')
 
     # multiple spaces
     text = re.sub(r'\s+', ' ', text)
