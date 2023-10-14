@@ -103,6 +103,8 @@ def scrape_comments(video_id):
 
                 pfp_url = item['snippet']['topLevelComment']['snippet']['authorProfileImageUrl']
 
+                likes = item['snippet']['topLevelComment']['snippet']['likeCount']
+
                 if comment_id in unique_ids:
                     continue
                 else:
@@ -111,7 +113,8 @@ def scrape_comments(video_id):
                                             'content': content,
                                             'published': published,
                                             'username': username,
-                                            'profile_image': pfp_url})
+                                            'profile_image': pfp_url,
+                                            'likes': likes})
                     
         while 'nextPageToken' in response.keys():
 
@@ -137,6 +140,8 @@ def scrape_comments(video_id):
 
                 pfp_url = item['snippet']['topLevelComment']['snippet']['authorProfileImageUrl']
 
+                likes = item['snippet']['topLevelComment']['snippet']['likeCount']
+
                 if comment_id in unique_ids:
                     continue
                 else:
@@ -145,7 +150,8 @@ def scrape_comments(video_id):
                                             'content': content,
                                             'published': published,
                                             'username': username,
-                                            'profile_image': pfp_url})
+                                            'profile_image': pfp_url,
+                                            'likes': likes})
     cursor.close()
     conn.close()
 
@@ -171,8 +177,8 @@ def load_raw_text(video_id):
 
     try:
         for item in all_comments_info:
-            cursor.execute("INSERT INTO comments_raw (video_id, comment_id, content, published, username, profile_image) VALUES (%s, %s, %s, %s, %s, %s)",
-                    (item['videoid'], item['commentid'], item['content'], item['published'], item['username'], item['profile_image']))
+            cursor.execute("INSERT INTO comments_raw (video_id, comment_id, content, published, username, profile_image, likes) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                    (item['videoid'], item['commentid'], item['content'], item['published'], item['username'], item['profile_image'], item['likes']))
             
         conn.commit()
             

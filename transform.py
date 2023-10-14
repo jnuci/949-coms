@@ -2,7 +2,7 @@ import pandas as pd
 import psycopg2
 import re
 import html
-import numpy as np
+from textblob import Word
 from config import DB_PASS
 
 def preprocess(text):
@@ -27,6 +27,10 @@ def preprocess(text):
 
     # multiple spaces
     text = re.sub(r'\s+', ' ', text)
+
+    #repeated characters
+    rx = re.compile(r'([^\W\d_])\1{2,}')
+    re.sub(r'[^\W\d_]+', lambda x: Word(rx.sub(r'\1\1', x.group())).correct() if rx.search(x.group()) else x.group(), text)
 
     # remove not alpahumeric characters, leaving punctuation.
     text = ''.join([char for char in text if (char.isalnum() or char.isspace() or (char in ["'", ".", ",", "!", "?", "\"", "<", "@"]))])
@@ -54,7 +58,7 @@ def main():
 
     data = cursor.fetchall()
 
-    data = pd.DataFrame(data, columns = ['video_id', 'comment_id', 'content', 'published', 'username', 'profile_image'])
+    data = pd.DataFrame(data, columns = ['video_id', 'comment_id', 'content', 'published', 'username', 'profile_image', 'likes'])
 
     data['content'] = [html.unescape(comment) for comment in data['content']]
 
@@ -63,8 +67,8 @@ def main():
     data = data[data['content'] != '']
 
     for row in data.values:
-        cursor.execute("INSERT INTO comments_cleaned (video_id, comment_id, content, published, username, profile_image) VALUES (%s, %s, %s, %s, %s, %s)",
-                    (row[0], row[1], row[2], row[3], row[4], row[5]))
+        cursor.execute("INSERT INTO comments_cleaned (video_id, comment_id, content, published, username, profile_image, likes) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                    (row[0], row[1], row[2], row[3], row[4], row[5], row[6]))
         
         conn.commit()
 
