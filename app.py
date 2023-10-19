@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from collections import Counter
 from nltk.corpus import stopwords
-from config import DB_PASS
+from config import DB_PASS, LOCALHOST
 import cv2
 import re
 from wordcloud import WordCloud
@@ -16,7 +16,7 @@ import psycopg2
 
 # Incorporate data
 conn = psycopg2.connect(
-        host = '192.168.1.104',
+        host = LOCALHOST,
         port = 5432,
         database = 'youtube_comments',
         user = 'postgres',
@@ -120,7 +120,7 @@ app.layout = html.Div([
         html.Div(children=[
             html.P('The 949 over time', style={"margin": "100px 0px 50px 0px"}),
             dcc.RadioItems(options = [2022, 2023], value=2022, id='year-selector'),
-            dcc.Slider(id='month-slider', min=1, max=12, step=1, value=6, marks={i:month for i,month in zip(range(1,13), ['Jan', 'Feb', 'March', 'April', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'])}),
+            dcc.Slider(id='month-slider', min=1, max=12, step=1, value=8, marks={i:month for i,month in zip(range(1,13), ['Jan', 'Feb', 'March', 'April', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'])}),
             dcc.Graph(figure={}, id='cloud_object')])
     ], style={"display": "flex", "flex-direction":"column", "flex": "2"}),
     html.Div(children=[

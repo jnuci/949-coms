@@ -2,7 +2,7 @@ import googleapiclient.discovery
 import argparse
 import psycopg2
 import numpy as np
-from config import API_KEY, DB_PASS
+from config import API_KEY, DB_PASS, LOCALHOST
 
 def get_channel_id_from_video(youtube, video_id):
     request = youtube.videos().list(
@@ -63,7 +63,7 @@ def scrape_comments(video_id):
     )
 
     conn = psycopg2.connect(
-        host = 'localhost',
+        host = LOCALHOST,
         port = 5432,
         database = 'youtube_comments',
         user = 'postgres',
@@ -166,7 +166,7 @@ def load_raw_text(video_id):
         return True
     
     conn = psycopg2.connect(
-        host = 'localhost',
+        host = LOCALHOST,
         port = 5432,
         database = 'youtube_comments',
         user = 'postgres',
