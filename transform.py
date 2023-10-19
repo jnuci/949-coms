@@ -3,7 +3,7 @@ import psycopg2
 import re
 import html
 from textblob import Word
-from config import DB_PASS
+from config import DB_PASS, LOCALHOST
 
 def preprocess(text):
     
@@ -46,7 +46,7 @@ def preprocess(text):
 
 def main():
     conn = psycopg2.connect(
-        host = 'localhost',
+        host = LOCALHOST,
         port = 5432,
         database = 'youtube_comments',
         user = 'postgres',

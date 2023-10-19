@@ -4,4 +4,30 @@ Welcome to 949 Coms! This project was developed in an effort to make useable dat
 
 In a production environment, it is a data engineers role to create and maintain data pipelines between various points in the data's lifespan. In this example, I have constructed an ETL (Extract, Transform, Load) pipeline that **extracts** raw comment data from each video on the given channetl, **transforms** the raw data into clean text data, and finally **loads** both the raw and processed data into a relational databse for use in downstream analytics.
 
-In future work, I plan to integrate this process into cloud-hosted automation technology. This would allow for a constant data stream of processed comments in real-time! The impact of this project lies in the reliability of the process and capabilities we have as data scientists to make decisions and insights given access to good data. 
+Additionally, we have constructed an analytics dashboard that can be integrated with live data.  
+
+### Replicating dashboard
+
+System requirements:
+ - PostgreSQL 15
+ - PostgreSQL bin on PATH
+ - pgAdmin 4
+ - Python 3.10 or later
+
+Define and configure database
+In your pgAdmin application create database with a relevant name then run this command in your terminal.
+```
+psql -U {your_username} -d {your_database_name} -f db_dump_file.sql
+```
+
+(Optional) Define and activate virtual environment
+
+```
+python -m venv {virtual environment name}
+\venv\scripts\activate
+```
+
+Install dependencies
+```
+pip install -r requirements.txt
+```
