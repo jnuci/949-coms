@@ -44,7 +44,7 @@ Run ETL process to update databases:
 ETL.bat
 ```
 
-To start app:
+To start dashboard application:
 ```
 py app.py
 ```
