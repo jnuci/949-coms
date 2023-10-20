@@ -15,19 +15,36 @@ System requirements:
  - Python 3.10 or later
 
 Define and configure database
-In your pgAdmin application create database with a relevant name then run this command in your terminal.
+In your pgAdmin application, create database with a relevant name then run this command in your terminal:
 ```
 psql -U {your_username} -d {your_database_name} -f db_dump_file.sql
 ```
 
-(Optional) Define and activate virtual environment
+After obtaining a YouTube Data API key and your local IP address, define environment variables in a config file:
+```
+API_KEY = {youtube_api_key}
+DB_PASS = {database_password}
+LOCALHOST = {your_ipv4_address}
+```
+
+(Optional) Define and activate virtual environment:
 
 ```
 python -m venv {virtual environment name}
 \venv\scripts\activate
 ```
 
-Install dependencies
+Install dependencies:
 ```
 pip install -r requirements.txt
+```
+
+Run ETL process to update databases:
+```
+ETL.bat
+```
+
+To start app:
+```
+py app.py
 ```
