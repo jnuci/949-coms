@@ -58,7 +58,7 @@ def monthly_wordcloud(month=6, year=2023):
 
     frequencies = get_frequencies(df['content'])
 
-    trojan = cv2.imread('./trojan.png')
+    trojan = cv2.imread('./Images/trojan.png')
 
     return WordCloud(width=800, height=800, background_color=(240, 240, 240), colormap='Accent', mask = trojan, contour_color='black', contour_width=1).generate_from_frequencies(frequencies=Counter({word:count for word,count in frequencies.most_common(100)}))
 
