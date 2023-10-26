@@ -1,0 +1,42 @@
+/* styles.css */
+
+.body {
+    display: flex;
+    flex-direction: row;
+    border: 5px solid #000000;
+}
+
+.left-column {
+    flex: 1;
+    border-right: 2px solid #000000;
+}
+
+.recent-comment-content {
+    display: flex;
+    justify-content: left;
+    padding-left: 60px;
+}
+
+.recent-comment-signature {
+    display: flex;
+    justify-content: right;
+    padding-right: 100px;
+}
+
+.recent-comment-content-block {
+    display: flex;
+    margin: 30px 0px 50px 0px;
+    flex-direction: column;
+}
+
+.wordcloud-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 2;
+}
+
+.right-column {
+    display: flex;
+    flex-direction: column;
+    flex: 3;
+}

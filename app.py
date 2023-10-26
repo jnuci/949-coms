@@ -1,5 +1,6 @@
 # Import packages
 from dash import Dash, html, dcc, callback, Output, Input
+from dash.html import Link
 from datetime import datetime
 import plotly.graph_objects as go
 import plotly.express as px
@@ -58,7 +59,7 @@ def monthly_wordcloud(month=6, year=2023):
 
     frequencies = get_frequencies(df['content'])
 
-    trojan = cv2.imread('./Images/trojan.png')
+    trojan = cv2.imread('./images/trojan.png')
 
     return WordCloud(width=800, height=800, background_color=(240, 240, 240), colormap='Accent', mask = trojan, contour_color='black', contour_width=1).generate_from_frequencies(frequencies=Counter({word:count for word,count in frequencies.most_common(100)}))
 
@@ -71,7 +72,7 @@ def comments_weekly():
     cursor.execute('SELECT published FROM comments_raw')
     data = cursor.fetchall()
     data = pd.DataFrame(data, columns = ['timestamp'])
-    counts = data['timestamp'].apply(lambda x: datetime(x.year, x.month, x.day)).value_counts()
+    counts = data['timestamp'].apply(lambda x: np.array(datetime(x.year, x.month, x.day))).value_counts()
     counts = counts.reset_index().resample('W', on='timestamp').sum()
     fig = px.scatter(
         x = counts.index,
@@ -109,25 +110,25 @@ def comments_hourly():
 app = Dash(__name__)
 
 # App layout
-app.layout = html.Div([
-    html.Div('Gonna put some text on the side here eventually!', style={"flex": "1"}), 
-    html.Div([
-            html.P('Most recent 949 comment!'),
-            html.Blockquote([
-                html.P(content, style={"display":"flex", "justify-content":"left", "padding-left":"60px"}),
-                html.Footer(f"- {username}", style={"display":"flex", "justify-content":"right", "padding-right":"100px"})
-            ], style={'display':'flex', 'margin': '30px 0px 50px 0px', 'flex-direction':'column'}),
-        html.Div(children=[
+app.layout = html.Div(className = 'body', children = [
+    html.Div(className = 'left-column', children = 'Gonna put some text on the side here eventually!'), 
+    html.Div(className = 'center-column', children = [
+            html.P(className = 'recent-comment-title', children = 'Most recent 949 comment!'),
+            html.Blockquote(className = 'recent-comment-content-block', children = [
+                html.P(className = 'recent-comment-content', children = content),
+                html.Footer(className = 'recent-comment-signature', children = f"- {username}")
+            ]),
+        html.Div(className = 'wordcloud-panel', children=[
             html.P('The 949 over time', style={"margin": "100px 0px 50px 0px"}),
             dcc.RadioItems(options = [2022, 2023], value=2022, id='year-selector'),
             dcc.Slider(id='month-slider', min=1, max=12, step=1, value=8, marks={i:month for i,month in zip(range(1,13), ['Jan', 'Feb', 'March', 'April', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'])}),
             dcc.Graph(figure={}, id='cloud_object')])
-    ], style={"display": "flex", "flex-direction":"column", "flex": "2"}),
-    html.Div(children=[
+    ]),
+    html.Div(className = 'right-column', children=[
         dcc.Graph(figure=comments_weekly(), id='comments_weekly'),
         dcc.Graph(figure=comments_hourly(), id='comments-hourly')
-    ], style = {"display": "flex", "flex-direction": "column", "flex": "3   "})   
-], style={"display": "flex", "flex-direction": "row"})
+    ])   
+])
 
 @callback(
     Output(component_id='cloud_object', component_property='figure'),
