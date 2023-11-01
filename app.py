@@ -35,7 +35,24 @@ def recent_comment():
 
     return content, username
 
-def monthly_wordcloud(month=6, year=2023):
+def valid_dates():
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT DISTINCT (EXTRACT(YEAR FROM published)) AS years FROM comments_cleaned;")
+
+    years = np.squeeze(cursor.fetchall())
+
+    months_map = {}
+
+    for year in years:
+        cursor.execute("SELECT DISTINCT EXTRACT(MONTH FROM published) FROM comments_raw WHERE EXTRACT(YEAR FROM published) = %s", (str(year), ))
+        months = np.squeeze(cursor.fetchall())
+
+        months_map[year] = months
+
+    return years, months_map
+
+def monthly_wordcloud(month, year):
 
     def get_frequencies(column):
         content = column.apply(lambda x: [token for token in x.split()])
@@ -65,6 +82,9 @@ def monthly_wordcloud(month=6, year=2023):
 
 # Get recent comment info
 content, username = recent_comment()
+
+# Establish valid dates for wordcloud
+years, months_map = valid_dates()
 
 # Make seaborn time-series plots
 def comments_weekly():
@@ -111,20 +131,20 @@ app = Dash(__name__)
 
 # App layout
 app.layout = html.Div(className = 'body', children = [
-    html.Div(className = 'left-column', children = 'Gonna put some text on the side here eventually!'), 
-    html.Div(className = 'center-column', children = [
+    html.Div(className = 'first-block', children = 'Gonna put some text on the side here eventually!'), 
+    html.Div(className = 'second-block', children = [
             html.P(className = 'recent-comment-title', children = 'Most recent 949 comment!'),
             html.Blockquote(className = 'recent-comment-content-block', children = [
                 html.P(className = 'recent-comment-content', children = content),
                 html.Footer(className = 'recent-comment-signature', children = f"- {username}")
             ]),
         html.Div(className = 'wordcloud-panel', children=[
-            html.P('The 949 over time', style={"margin": "100px 0px 50px 0px"}),
-            dcc.RadioItems(options = [2022, 2023], value=2022, id='year-selector'),
-            dcc.Slider(id='month-slider', min=1, max=12, step=1, value=8, marks={i:month for i,month in zip(range(1,13), ['Jan', 'Feb', 'March', 'April', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'])}),
+            html.P(className = 'wordcloud-panel-title', children = 'The 949 over time'),
+            dcc.Dropdown(className = 'wordcloud-year-selector', options = years, value=2022, id='wordcloud-year-selector', clearable=False),
+            dcc.Slider(id='month-slider', included=False, min=1, max=12, step=1, value=8, marks={i:month for i,month in zip(range(1,13), ['Jan', 'Feb', 'March', 'April', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'])}),
             dcc.Graph(figure={}, id='cloud_object')])
     ]),
-    html.Div(className = 'right-column', children=[
+    html.Div(className = 'third-block', children=[
         dcc.Graph(figure=comments_weekly(), id='comments_weekly'),
         dcc.Graph(figure=comments_hourly(), id='comments-hourly')
     ])   
@@ -133,11 +153,33 @@ app.layout = html.Div(className = 'body', children = [
 @callback(
     Output(component_id='cloud_object', component_property='figure'),
     Input(component_id='month-slider', component_property='value'),
-    Input(component_id='year-selector', component_property='value')
+    Input(component_id='wordcloud-year-selector', component_property='value')
 )
 def update_cloud(month, year):
     cloud = go.Figure(data=[go.Image(z=monthly_wordcloud(month=month, year=year))])
     return cloud
+
+# dcc.Slider(id='month-slider', included=False, min=1, max=12, step=1, value=8, marks={i:month for i,month in zip(range(1,13), ['Jan', 'Feb', 'March', 'April', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'])}),
+@callback(
+    Output(component_id='month-slider', component_property='min'),
+    Output(component_id='month-slider', component_property='max'),
+    Output(component_id='month-slider', component_property='value'),
+    Output(component_id='month-slider', component_property='marks'),
+    Input(component_id='wordcloud-year-selector', component_property='value')
+)
+def update_slider(year):
+    months = [int(val) for val in months_map[year]]
+
+    min_month = min(months)
+    max_month = max(months)
+
+    initial_month = (min_month + max_month) // 2
+
+    all_months = ['Jan', 'Feb', 'March', 'April', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
+
+    marks = {i:month for i, month in zip(range(min_month, max_month + 1), all_months[min_month-1: max_month])}
+
+    return min_month, max_month, initial_month, marks
 
 # Run the app
 if __name__ == '__main__':
