@@ -76,11 +76,15 @@ def scrape_comments(video_id):
     unique_ids = cursor.fetchall()
     unique_ids = np.array(unique_ids).squeeze()
 
+    new_ids = set()
+
     channel_id = get_channel_id_from_video(youtube, video_id)
 
     playlist_id = get_playlist_id_from_channel(youtube, channel_id)
 
     ids = get_all_uploads(youtube, playlist_id)
+
+    updated = 0
 
     for video_id in ids:
 
@@ -105,9 +109,11 @@ def scrape_comments(video_id):
 
                 likes = item['snippet']['topLevelComment']['snippet']['likeCount']
 
-                if comment_id in unique_ids:
-                    continue
+                if comment_id in unique_ids or comment_id in new_ids:
+                    cursor.execute('UPDATE comments_raw SET likes = %s WHERE comment_id = %s', (likes, f'{comment_id}'))
+                    conn.commit()
                 else:
+                    new_ids.add(comment_id)
                     all_comments_info.append({'videoid': video_id,
                                             'commentid': comment_id,
                                             'content': content,
@@ -142,9 +148,11 @@ def scrape_comments(video_id):
 
                 likes = item['snippet']['topLevelComment']['snippet']['likeCount']
 
-                if comment_id in unique_ids:
-                    continue
+                if comment_id in unique_ids or comment_id in new_ids:
+                    cursor.execute('UPDATE comments_raw SET likes = %s WHERE comment_id = %s', (likes, f'{comment_id}'))
+                    conn.commit()
                 else:
+                    new_ids.add(comment_id)
                     all_comments_info.append({'videoid': video_id,
                                             'commentid': comment_id,
                                             'content': content,
@@ -158,7 +166,6 @@ def scrape_comments(video_id):
     return all_comments_info
 
 def load_raw_text(video_id):
-
     all_comments_info = scrape_comments(video_id)
 
     if not all_comments_info:
@@ -203,6 +210,6 @@ def main():
 
     if load_raw_text(video_id):
         print('Comment loading complete')
-
+    
 if __name__ == "__main__":
     main()
