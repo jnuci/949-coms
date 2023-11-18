@@ -4,6 +4,7 @@ import psycopg2
 import numpy as np
 from config import API_KEY, DB_PASS, LOCALHOST
 
+# retrive channel id from youtube data API
 def get_channel_id_from_video(youtube, video_id):
     request = youtube.videos().list(
         part = 'snippet',
@@ -14,6 +15,7 @@ def get_channel_id_from_video(youtube, video_id):
 
     return response['items'][0]['snippet']['channelId']
 
+# retrieve playlist id of all channel uploads
 def get_playlist_id_from_channel(youtube, channel_id):
     request = youtube.channels().list(
         part = 'contentDetails',
@@ -24,8 +26,9 @@ def get_playlist_id_from_channel(youtube, channel_id):
 
     return response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
 
+# retrieve each video id from playlist id
 def get_all_uploads(youtube, playlist_id):
-
+    
     video_ids = []
 
     request = youtube.playlistItems().list(
@@ -35,9 +38,12 @@ def get_all_uploads(youtube, playlist_id):
 
     response = request.execute()
 
+    # store video ids in array
     for vid in response['items']:
         video_ids.append(vid['snippet']['resourceId']['videoId'])
 
+    # if another page of video ids exists
+    # retrive video ids from next page
     while 'nextPageToken' in response.keys():
         
         page_token = response['nextPageToken']
@@ -55,6 +61,7 @@ def get_all_uploads(youtube, playlist_id):
 
     return video_ids
 
+# retrieve data for each comment
 def scrape_comments(video_id):
     all_comments_info = []
 
@@ -70,6 +77,7 @@ def scrape_comments(video_id):
         password = DB_PASS,
     )
 
+    # retrieve previously loaded comments
     cursor = conn.cursor()
     cursor.execute("SELECT comment_id FROM comments_raw")
 
@@ -84,6 +92,7 @@ def scrape_comments(video_id):
 
     ids = get_all_uploads(youtube, playlist_id)
 
+    # keep count of comments with likes value updated
     updated = 0
 
     for video_id in ids:
@@ -96,6 +105,7 @@ def scrape_comments(video_id):
 
         response = request.execute()
 
+        # iterate over each comment in response and collect relevant data
         for item in response['items']:
                 comment_id = item['snippet']['topLevelComment']['id']
 
@@ -109,9 +119,12 @@ def scrape_comments(video_id):
 
                 likes = item['snippet']['topLevelComment']['snippet']['likeCount']
 
+                # update like count if comment previously loaded
+                # otherwise add comment to resulting array
                 if comment_id in unique_ids or comment_id in new_ids:
                     cursor.execute('UPDATE comments_raw SET likes = %s WHERE comment_id = %s', (likes, f'{comment_id}'))
                     conn.commit()
+                    updated += 1
                 else:
                     new_ids.add(comment_id)
                     all_comments_info.append({'videoid': video_id,
@@ -122,6 +135,7 @@ def scrape_comments(video_id):
                                             'profile_image': pfp_url,
                                             'likes': likes})
                     
+        # repeat process while another page of comments exists
         while 'nextPageToken' in response.keys():
 
             newToken = response['nextPageToken']
@@ -151,6 +165,7 @@ def scrape_comments(video_id):
                 if comment_id in unique_ids or comment_id in new_ids:
                     cursor.execute('UPDATE comments_raw SET likes = %s WHERE comment_id = %s', (likes, f'{comment_id}'))
                     conn.commit()
+                    updated += 1
                 else:
                     new_ids.add(comment_id)
                     all_comments_info.append({'videoid': video_id,
@@ -163,14 +178,16 @@ def scrape_comments(video_id):
     cursor.close()
     conn.close()
 
-    return all_comments_info
+    return all_comments_info, updated
 
+# loading comment data into source database
 def load_raw_text(video_id):
-    all_comments_info = scrape_comments(video_id)
+    all_comments_info, updated = scrape_comments(video_id)
 
+    # if no new comments, return early
     if not all_comments_info:
         print("No new comments found")
-        return True
+        return True, updated, 0
     
     conn = psycopg2.connect(
         host = LOCALHOST,
@@ -197,9 +214,11 @@ def load_raw_text(video_id):
         cursor.close()
         conn.close()
 
-    return True
+    return True, updated, len(all_comments_info)
 
+# load raw text and log changes
 def main():
+    # add parsing argument for video id
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-i', type = str, help = 'Video ID from target channel')
@@ -208,7 +227,11 @@ def main():
 
     video_id = args.i
 
-    if load_raw_text(video_id):
+    loaded, updated, new = load_raw_text(video_id)
+
+    if loaded:
+        print(f'{updated} total comments updated')
+        print(f'{new} new comments found')
         print('Comment loading complete')
     
 if __name__ == "__main__":
